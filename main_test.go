@@ -59,8 +59,10 @@ func newTestServer(t *testing.T, ollamaServer *httptest.Server) (*Server, *safeB
 		sessions:     make(map[string]*Session),
 		enc:          json.NewEncoder(&out),
 		client:       client,
+		webClient:    http.DefaultClient,
 		ollamaURL:    url,
 		defaultModel: "qwen3:latest",
+		modelCaps:    make(map[string][]string),
 	}
 	return srv, &out
 }

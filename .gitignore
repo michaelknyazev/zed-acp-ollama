@@ -12,3 +12,7 @@ acp-ollama-*
 _tmp
 research
 tmp
+
+# misc
+.claude
+.cursor
