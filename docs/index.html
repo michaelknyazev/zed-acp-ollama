@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>zed-acp-ollama — Ollama in Zed's Agent panel</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --purple: #bc8cff;
+      --orange: #ffa657;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 48px 24px 40px;
+      text-align: center;
+    }
+    .badge-row {
+      display: flex; gap: 8px; justify-content: center; margin-bottom: 24px;
+    }
+    .badge {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .badge.green { color: var(--green); border-color: var(--green); }
+    h1 { font-size: 2.4rem; font-weight: 700; margin-bottom: 12px; }
+    .subtitle { font-size: 1.1rem; color: var(--muted); max-width: 560px; margin: 0 auto 32px; }
+
+    .install-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .install-box code {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 14px;
+      color: var(--green);
+      flex: 1;
+    }
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 4px 10px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--text); }
+
+    main { max-width: 800px; margin: 0 auto; padding: 48px 24px; }
+
+    .problem {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--orange);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 40px;
+    }
+    .problem h2 { color: var(--orange); margin-bottom: 8px; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .problem p { color: var(--muted); }
+
+    .arch {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    .arch pre {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 13px;
+      color: var(--accent);
+      display: inline-block;
+      text-align: left;
+    }
+
+    h2.section { font-size: 1.3rem; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 40px; }
+    @media (max-width: 600px) { .features { grid-template-columns: 1fr; } }
+    .feature {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .feature .icon { font-size: 1.4rem; margin-bottom: 8px; }
+    .feature strong { display: block; margin-bottom: 4px; }
+    .feature p { font-size: 14px; color: var(--muted); }
+
+    .config-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; font-size: 14px; }
+    .config-table th, .config-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: left; }
+    .config-table th { color: var(--muted); font-weight: 500; }
+    .config-table code { font-family: "SF Mono", "Fira Code", monospace; background: var(--surface); padding: 2px 6px; border-radius: 4px; color: var(--purple); }
+
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 24px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge-row">
+    <span class="badge green">Go 1.22+</span>
+    <span class="badge">ACP v1</span>
+    <span class="badge">Zed</span>
+    <span class="badge">MIT</span>
+  </div>
+  <h1>zed-acp-ollama</h1>
+  <p class="subtitle">
+    Run local Ollama models in Zed's Agent panel — with native thinking blocks,
+    model picker, and automatic project context.
+  </p>
+  <div class="install-box">
+    <code id="install-cmd">curl -fsSL https://raw.githubusercontent.com/michaelknyazev/zed-acp-ollama/main/install.sh | bash</code>
+    <button class="copy-btn" onclick="copy()">Copy</button>
+  </div>
+</header>
+
+<main>
+
+  <div class="problem">
+    <h2>The problem</h2>
+    <p>
+      Zed's built-in Ollama integration uses HTTP streaming. Models like Qwen3 think
+      silently for up to 400 seconds before the first content token arrives.
+      Zed's HTTP client sees no data and kills the connection.
+      <code style="color:var(--orange)">zed-acp-ollama</code> uses stdio JSON-RPC — no HTTP timeout can fire on a pipe.
+    </p>
+  </div>
+
+  <div class="arch">
+    <pre>Zed  ──stdio──▶  zed-acp-ollama  ──HTTP──▶  Ollama
+     JSON-RPC                 /api/chat
+                              /api/tags</pre>
+  </div>
+
+  <h2 class="section">Features</h2>
+  <div class="features">
+    <div class="feature">
+      <div class="icon">🧠</div>
+      <strong>Native thinking blocks</strong>
+      <p>Thinking tokens stream as <code>agent_thought_chunk</code> — Zed renders them as collapsible blocks.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">⚙️</div>
+      <strong>Model picker</strong>
+      <p>All models from <code>/api/tags</code> appear in a Zed dropdown. Switch without editing config.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">📁</div>
+      <strong>Project context</strong>
+      <p>Reads <code>AGENTS.md</code>, <code>CLAUDE.md</code>, <code>.cursorrules</code>, <code>README.md</code> + file tree on first turn.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">💬</div>
+      <strong>Conversation history</strong>
+      <p>Full multi-turn history per session. Context files injected once as a system message.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🔀</div>
+      <strong>Per-session model</strong>
+      <p>Switch models in the middle of a project without losing history.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">🔭</div>
+      <strong>Thinking toggle</strong>
+      <p>Enable or disable streaming of thinking blocks via the <code>thought_level</code> dropdown.</p>
+    </div>
+  </div>
+
+  <h2 class="section">Configuration</h2>
+  <table class="config-table">
+    <thead>
+      <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>OLLAMA_URL</code></td><td><code>http://localhost:11434</code></td><td>Ollama base URL</td></tr>
+      <tr><td><code>OLLAMA_MODEL</code></td><td><code>qwen3:latest</code></td><td>Default model (overridable in Zed UI)</td></tr>
+    </tbody>
+  </table>
+
+  <h2 class="section">Links</h2>
+  <p>
+    <a href="https://github.com/michaelknyazev/zed-acp-ollama">GitHub</a> ·
+    <a href="https://github.com/michaelknyazev/zed-acp-ollama/releases">Releases</a> ·
+    <a href="https://agentclientprotocol.com">ACP spec</a> ·
+    <a href="https://ollama.com">Ollama</a>
+  </p>
+
+</main>
+
+<footer>
+  MIT License · Built with Go · Works with Zed's Agent Client Protocol
+</footer>
+
+<script>
+function copy() {
+  navigator.clipboard.writeText(document.getElementById('install-cmd').textContent);
+  const btn = document.querySelector('.copy-btn');
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 2000);
+}
+</script>
+</body>
+</html>
