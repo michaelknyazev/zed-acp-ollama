@@ -6,7 +6,7 @@ SMOKE_CWD   ?= $(CURDIR)
 SMOKE_MSG   ?= list the files in this project
 OLLAMA_URL  ?= https://ollama.lan
 
-.PHONY: build install uninstall test lint clean smoke
+.PHONY: build install uninstall test lint clean smoke release
 
 build:
 	go build $(LDFLAGS) -o $(BINARY) .
@@ -27,6 +27,14 @@ lint:
 
 clean:
 	rm -f $(BINARY)
+
+# Tag and push a release. Usage: make release TAG=v0.2.0
+release:
+	@test -n "$(TAG)" || (echo "usage: make release TAG=v0.2.0" && exit 1)
+	@git diff --quiet && git diff --cached --quiet || (echo "error: uncommitted changes" && exit 1)
+	git tag $(TAG)
+	git push origin $(TAG)
+	@echo "Released $(TAG) — watch: https://github.com/$(shell git remote get-url origin | sed 's/.*github.com[:/]//' | sed 's/\.git//')/actions"
 
 # Replay a real ACP session against live Ollama — no Zed needed.
 # Override prompt:  make smoke SMOKE_MSG="write a hello world in Go"
