@@ -1,5 +1,14 @@
+# Misc
+.DS_Store
+
+# Artifacts
 zed-acp-ollama
 zed-acp-ollama-*
 acp-ollama
 acp-ollama-*
 *.exe
+
+# DX
+_tmp
+research
+tmp

@@ -78,11 +78,16 @@ type NewSessionParams struct {
 }
 
 type NewSessionResult struct {
-	SessionID string `json:"sessionId"`
+	SessionID     string                `json:"sessionId"`
+	ConfigOptions []SessionConfigOption `json:"configOptions,omitempty"`
 }
 
 type LoadSessionParams struct {
 	SessionID string `json:"sessionId"`
+}
+
+type LoadSessionResult struct {
+	ConfigOptions []SessionConfigOption `json:"configOptions,omitempty"`
 }
 
 type ContentBlock struct {
@@ -311,25 +316,6 @@ func (s *Server) buildConfigOptions(sess *Session, models []string) []SessionCon
 	}
 }
 
-func (s *Server) sendModelPicker(sessionID string) {
-	models := s.fetchModels()
-
-	s.mu.Lock()
-	sess := s.sessions[sessionID]
-	if sess == nil {
-		s.mu.Unlock()
-		return
-	}
-	opts := s.buildConfigOptions(sess, models)
-	s.mu.Unlock()
-
-	s.notify(sessionID, ConfigOptionUpdate{
-		SessionUpdate: "config_option_update",
-		ConfigOptions: opts,
-	})
-	log.Printf("[models] sent picker: %d models", len(models))
-}
-
 func (s *Server) toolStart(sessionID, id, title, kind string) {
 	s.notify(sessionID, ToolCall{
 		SessionUpdate: "tool_call",
@@ -462,20 +448,25 @@ func (s *Server) handle(req Request) {
 		s.mu.Lock()
 		s.sessions[sess.ID] = sess
 		s.mu.Unlock()
-		log.Printf("[session] new %s cwd=%s", sess.ID, p.CWD)
-		s.respond(req.ID, NewSessionResult{SessionID: sess.ID})
-		go s.sendModelPicker(sess.ID)
+		models := s.fetchModels()
+		opts := s.buildConfigOptions(sess, models)
+		log.Printf("[session] new %s cwd=%s models=%d", sess.ID, p.CWD, len(models))
+		s.respond(req.ID, NewSessionResult{SessionID: sess.ID, ConfigOptions: opts})
 
 	case "session/load", "session/resume":
 		var p LoadSessionParams
 		json.Unmarshal(req.Params, &p)
 		s.mu.Lock()
-		if _, exists := s.sessions[p.SessionID]; !exists {
-			s.sessions[p.SessionID] = &Session{ID: p.SessionID}
+		sess, exists := s.sessions[p.SessionID]
+		if !exists {
+			sess = &Session{ID: p.SessionID, Model: model, ThinkingEnabled: true}
+			s.sessions[p.SessionID] = sess
 		}
 		s.mu.Unlock()
-		log.Printf("[session] load %s", p.SessionID)
-		s.respond(req.ID, NewSessionResult{SessionID: p.SessionID})
+		models := s.fetchModels()
+		opts := s.buildConfigOptions(sess, models)
+		log.Printf("[session] load %s models=%d", p.SessionID, len(models))
+		s.respond(req.ID, LoadSessionResult{ConfigOptions: opts})
 
 	case "session/set_config_option":
 		var p SetConfigOptionParams

@@ -318,7 +318,7 @@ func TestHandleInitialize(t *testing.T) {
 
 func TestHandleSessionNew_CreatesSession(t *testing.T) {
 	srv, out := newTestServer(t, nil)
-	// Use a mock client so sendModelPicker doesn't make real HTTP calls
+	// Use a mock client so fetchModels (called synchronously in session/new) doesn't make real HTTP calls
 	srv.client = &http.Client{Transport: roundTripFunc(func(r *http.Request) (*http.Response, error) {
 		return httptest.NewRecorder().Result(), nil
 	})}
